@@ -37,7 +37,7 @@ int main(int argc, const char *argv[])
     };
 
     // default values for arguments
-    const char* detectorTypeC = "SHITOMASI";      // SHITOMASI, HARRIS, FAST, BRISK, ORB, AKAZE, and SIFT
+    const char* detectorTypeC = "ORB";      // SHITOMASI, HARRIS, FAST, BRISK, ORB, AKAZE, and SIFT
     const char* matcherTypeC = "MAT_BF";          // MAT_BF, MAT_FLANN
     const char* descriptorTypeC = "BRISK";        // BRISK BRIEF, ORB, FREAK, AKAZE, SIFT
     const char* selectorTypeC = "SEL_NN";         // SEL_NN, SEL_KNN
@@ -50,7 +50,7 @@ int main(int argc, const char *argv[])
         OPT_GROUP("Optional Arguments: "),
         OPT_STRING('\0', "detector_type", &detectorTypeC, "detector type, options: SHITOMASI, HARRIS, FAST, BRISK, ORB, AKAZE, and SIFT"
                                                           "\n\t\t\t\tif compiled (WITH_CUDA on): ORB_CUDA, FAST_CUDA"
-                                                          "\n\t\t\t\tdefault: SHITOMASI"),
+                                                          "\n\t\t\t\tdefault: ORB"),
         OPT_STRING('\0', "matcher_type", &matcherTypeC, "matcher type, options: MAT_BF, MAT_FLANN,"
                                                         "\n\t\t\t\tif compiled (WITH_CUDA on): MAT_BF_CUDA"
                                                         "\n\t\t\t\tdefault: MAT_BF"),
@@ -319,6 +319,7 @@ int main(int argc, const char *argv[])
                     //// TASK FP.3 -> assign enclosed keypoint matches to bounding box (implement -> clusterKptMatchesWithROI)
                     //// TASK FP.4 -> compute time-to-collision based on camera (implement -> computeTTCCamera)
                     double ttcCamera;
+                    continue; // TODO
                     clusterKptMatchesWithROI(*currBB, (dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->kptMatches);                    
                     computeTTCCamera((dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints, currBB->kptMatches, sensorFrameRate, ttcCamera);
                     //// EOF STUDENT ASSIGNMENT

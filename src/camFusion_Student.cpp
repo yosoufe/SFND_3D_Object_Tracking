@@ -216,8 +216,13 @@ void matchBoundingBoxes(std::vector<cv::DMatch> &matches,
         {
             visited_BB_prev.insert(bb_id_prev);
             visited_BB_current.insert(bb_id_cur);
-            bbBestMatches.emplace(std::make_pair(bb_id_cur,bb_id_prev));
+            bbBestMatches.emplace(std::make_pair(bb_id_prev,bb_id_cur));
         }
+    }
+
+    if (true)
+    {
+        printf("number of matched bbs: %lu \n", bbBestMatches.size());
     }
 }
 
