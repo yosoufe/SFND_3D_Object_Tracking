@@ -20,11 +20,61 @@
 #include "lidarData.hpp"
 #include "camFusion.hpp"
 
+#include "argparse.h"
+#include <numeric>
+
 using namespace std;
 
 /* MAIN PROGRAM */
 int main(int argc, const char *argv[])
 {
+    // parse command line arguments:
+    static const char *const usage[] = {
+        "./2D_feature_tracking [args]\n"
+        "For example: ./2D_feature_tracking --detector_type=BRISK --matcher_type=MAT_FLANN --descriptor_type=DES_BINARY --selector_type=SEL_KNN -f",
+        NULL,
+        NULL
+    };
+
+    // default values for arguments
+    const char* detectorTypeC = "SHITOMASI";      // SHITOMASI, HARRIS, FAST, BRISK, ORB, AKAZE, and SIFT
+    const char* matcherTypeC = "MAT_BF";          // MAT_BF, MAT_FLANN
+    const char* descriptorTypeC = "BRISK";        // BRISK BRIEF, ORB, FREAK, AKAZE, SIFT
+    const char* selectorTypeC = "SEL_NN";         // SEL_NN, SEL_KNN
+    int bFocusOnVehicle = 0;                      // zero = false, none-zero = True
+    int bLimitKpts = 0;                           // zero = false, none-zero = True
+    int bQuiet = 0;                               // zero = false, none-zero = True
+
+    struct argparse_option options[] = {
+        OPT_HELP(),
+        OPT_GROUP("Optional Arguments: "),
+        OPT_STRING('\0', "detector_type", &detectorTypeC, "detector type, options: SHITOMASI, HARRIS, FAST, BRISK, ORB, AKAZE, and SIFT"
+                                                          "\n\t\t\t\tif compiled (WITH_CUDA on): ORB_CUDA, FAST_CUDA"
+                                                          "\n\t\t\t\tdefault: SHITOMASI"),
+        OPT_STRING('\0', "matcher_type", &matcherTypeC, "matcher type, options: MAT_BF, MAT_FLANN,"
+                                                        "\n\t\t\t\tif compiled (WITH_CUDA on): MAT_BF_CUDA"
+                                                        "\n\t\t\t\tdefault: MAT_BF"),
+        OPT_STRING('\0', "descriptor_type", &descriptorTypeC, "descriptor type, options: BRISK BRIEF, ORB, FREAK, AKAZE, SIFT"
+                                                              "\n\t\t\t\tif compiled (WITH_CUDA on): ORB_CUDA"
+                                                              "\n\t\t\t\tdefault: BRISK"),
+        OPT_STRING('\0', "selector_type", &selectorTypeC, "selector type, options: SEL_NN, SEL_KNN"
+                                                          "\n\t\t\t\tdefault: SEL_NN"),
+        OPT_BOOLEAN('f', "focus_on_vehicle", &bFocusOnVehicle, "To focus on only keypoints that are on the preceding vehicle."),
+        OPT_BOOLEAN('l', "limit_keypoints", &bLimitKpts, "To limit the number of keypoints to maximum 50 keypoints."),
+        OPT_BOOLEAN('q', "quiet", &bQuiet, "If this flag is chosen no image would be shown. Good for performance measurement"),
+        OPT_END()
+    };
+    struct argparse argparse;
+    argparse_init(&argparse, options, usage, 0);
+    argparse_describe(&argparse, "\nExplores different 2d keypoint detector, descriptor and matching", NULL);
+    argc = argparse_parse(&argparse, argc, argv);
+
+    std::string detectorType(detectorTypeC);
+    std::string matcherType(matcherTypeC);    
+    std::string descriptorType(descriptorTypeC);
+    std::string selectorType(selectorTypeC);
+
+
     /* INIT VARIABLES AND DATA STRUCTURES */
 
     // data location
@@ -93,7 +143,7 @@ int main(int argc, const char *argv[])
         frame.cameraImg = img;
         dataBuffer.push_back(frame);
 
-        cout << "#1 : LOAD IMAGE INTO BUFFER done" << endl;
+        if (!bQuiet) cout << "#1 : LOAD IMAGE INTO BUFFER done" << endl;
 
 
         /* DETECT & CLASSIFY OBJECTS */
@@ -103,7 +153,7 @@ int main(int argc, const char *argv[])
         detectObjects((dataBuffer.end() - 1)->cameraImg, (dataBuffer.end() - 1)->boundingBoxes, confThreshold, nmsThreshold,
                       yoloBasePath, yoloClassesFile, yoloModelConfiguration, yoloModelWeights, bVis);
 
-        cout << "#2 : DETECT & CLASSIFY OBJECTS done" << endl;
+        if (!bQuiet) cout << "#2 : DETECT & CLASSIFY OBJECTS done" << endl;
 
 
         /* CROP LIDAR POINTS */
@@ -119,7 +169,7 @@ int main(int argc, const char *argv[])
     
         (dataBuffer.end() - 1)->lidarPoints = lidarPoints;
 
-        cout << "#3 : CROP LIDAR POINTS done" << endl;
+        if (!bQuiet) cout << "#3 : CROP LIDAR POINTS done" << endl;
 
 
         /* CLUSTER LIDAR POINT CLOUD */
@@ -136,7 +186,7 @@ int main(int argc, const char *argv[])
         }
         bVis = false;
 
-        cout << "#4 : CLUSTER LIDAR POINT CLOUD done" << endl;
+        if (!bQuiet) cout << "#4 : CLUSTER LIDAR POINT CLOUD done" << endl;
         
         
         // REMOVE THIS LINE BEFORE PROCEEDING WITH THE FINAL PROJECT
@@ -150,15 +200,24 @@ int main(int argc, const char *argv[])
 
         // extract 2D keypoints from current image
         vector<cv::KeyPoint> keypoints; // create empty feature list for current image
-        string detectorType = "SHITOMASI";
 
         if (detectorType.compare("SHITOMASI") == 0)
         {
             detKeypointsShiTomasi(keypoints, imgGray, false);
         }
-        else
+        else if (detectorType.compare("HARRIS") == 0)
         {
-            //...
+            detKeypointsHarris(keypoints, imgGray, false);
+        }
+        else if (detectorType.compare("FAST") == 0 || 
+                    detectorType.compare("BRISK") == 0 || 
+                    detectorType.compare("ORB") == 0 || 
+                    detectorType.compare("AKAZE") == 0  || 
+                    detectorType.compare("SIFT") == 0 || 
+                    detectorType.compare("ORB_CUDA") == 0 || 
+                    detectorType.compare("FAST_CUDA") == 0 )
+        {
+            detKeypointsModern(keypoints, imgGray, detectorType, false);
         }
 
         // optional : limit number of keypoints (helpful for debugging and learning)
@@ -172,13 +231,13 @@ int main(int argc, const char *argv[])
                 keypoints.erase(keypoints.begin() + maxKeypoints, keypoints.end());
             }
             cv::KeyPointsFilter::retainBest(keypoints, maxKeypoints);
-            cout << " NOTE: Keypoints have been limited!" << endl;
+            if (!bQuiet) cout << " NOTE: Keypoints have been limited!" << endl;
         }
 
         // push keypoints and descriptor for current frame to end of data buffer
         (dataBuffer.end() - 1)->keypoints = keypoints;
 
-        cout << "#5 : DETECT KEYPOINTS done" << endl;
+        if (!bQuiet) cout << "#5 : DETECT KEYPOINTS done" << endl;
 
 
         /* EXTRACT KEYPOINT DESCRIPTORS */
@@ -190,7 +249,7 @@ int main(int argc, const char *argv[])
         // push descriptors for current frame to end of data buffer
         (dataBuffer.end() - 1)->descriptors = descriptors;
 
-        cout << "#6 : EXTRACT DESCRIPTORS done" << endl;
+        if (!bQuiet) cout << "#6 : EXTRACT DESCRIPTORS done" << endl;
 
 
         if (dataBuffer.size() > 1) // wait until at least two images have been processed
@@ -199,9 +258,6 @@ int main(int argc, const char *argv[])
             /* MATCH KEYPOINT DESCRIPTORS */
 
             vector<cv::DMatch> matches;
-            string matcherType = "MAT_BF";        // MAT_BF, MAT_FLANN
-            string descriptorType = "DES_BINARY"; // DES_BINARY, DES_HOG
-            string selectorType = "SEL_NN";       // SEL_NN, SEL_KNN
 
             matchDescriptors((dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints,
                              (dataBuffer.end() - 2)->descriptors, (dataBuffer.end() - 1)->descriptors,
@@ -210,7 +266,7 @@ int main(int argc, const char *argv[])
             // store matches in current data frame
             (dataBuffer.end() - 1)->kptMatches = matches;
 
-            cout << "#7 : MATCH KEYPOINT DESCRIPTORS done" << endl;
+            if (!bQuiet) cout << "#7 : MATCH KEYPOINT DESCRIPTORS done" << endl;
 
             
             /* TRACK 3D OBJECT BOUNDING BOXES */
@@ -224,7 +280,7 @@ int main(int argc, const char *argv[])
             // store matches in current data frame
             (dataBuffer.end()-1)->bbMatches = bbBestMatches;
 
-            cout << "#8 : TRACK 3D OBJECT BOUNDING BOXES done" << endl;
+            if (!bQuiet) cout << "#8 : TRACK 3D OBJECT BOUNDING BOXES done" << endl;
 
 
             /* COMPUTE TTC ON OBJECT IN FRONT */
