@@ -38,4 +38,9 @@ void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
                      std::vector<LidarPoint> &lidarPointsCurr,
                      double frameRate,
                      double &TTC);
+
+std::vector<BoundingBox *> findBoundingBoxesContainingKeypoint(cv::KeyPoint kpt,
+                                                               DataFrame frame);
+
+
 #endif /* camFusion_hpp */

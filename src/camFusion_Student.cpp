@@ -7,6 +7,9 @@
 
 #include "camFusion.hpp"
 #include "dataStructures.h"
+#include <unordered_map>
+#include <set>
+#include <stdio.h>
 
 using namespace std;
 
@@ -158,8 +161,75 @@ void matchBoundingBoxes(std::vector<cv::DMatch> &matches,
      * 3- Count the number of matches for for each bounding box match in the multimap
      * 4- Associate the bounding boxes with the highest number of match occurrence.
      */
-    for (auto & match : matches)
+
+    // current = train
+    // previous = query
+
+    // create a map of bounding box pair -> number of matching occurrence
+    std::unordered_map<bb_pairs, int, CustomHash> occurrence_map;
+
+    for (auto &match : matches)
     {
-        
+        // which bounding boxes have the keypoint in the **previous** frame
+        cv::KeyPoint &prev_kpt = prevFrame.keypoints[match.queryIdx];
+        std::vector<BoundingBox *> prev_bb_containing_this_keypoint = findBoundingBoxesContainingKeypoint(prev_kpt, prevFrame);
+
+        // which bounding boxes have the keypoint in the **current** frame
+        cv::KeyPoint &current_kpt = currFrame.keypoints[match.trainIdx];
+        std::vector<BoundingBox *> cur_bb_containing_this_keypoint = findBoundingBoxesContainingKeypoint(current_kpt, currFrame);
+
+        // increment the occurrence map for all enclosing bounding boxes.
+        for (BoundingBox *prev_ptr : prev_bb_containing_this_keypoint)
+        {
+            for (BoundingBox *cur_ptr : cur_bb_containing_this_keypoint)
+            {
+                // occurrence_map[std::make_pair(prev_ptr->boxID, cur_ptr->boxID)] += 1;
+                occurrence_map[{prev_ptr->boxID, cur_ptr->boxID}] += 1;
+            }
+        }
     }
+
+    // Declaring a set that will store the pairs using above comparision logic
+    // hints from https://thispointer.com/how-to-sort-a-map-by-value-in-c/
+    std::set<std::pair<bb_pairs, int>, comp__f> boundingBoxPairs(
+        occurrence_map.begin(), occurrence_map.end(), comp__f());
+
+    // for debug purposes print the set
+    bool debugSorting = false;
+    if (debugSorting)
+    {
+        for (std::pair<bb_pairs, int> bbmatch : boundingBoxPairs)
+        {
+            printf("match: { %d , %d }, occurred: %d \n", bbmatch.first.first, bbmatch.first.second, bbmatch.second);
+        }
+    }
+
+    //create the final results
+    bbBestMatches.clear();
+    std::set<int> visited_BB_prev, visited_BB_current;
+    for (std::pair<bb_pairs, int> bbmatch : boundingBoxPairs)
+    {
+        int bb_id_prev = bbmatch.first.first;
+        int bb_id_cur = bbmatch.first.second;
+        if (visited_BB_prev.find(bb_id_prev) == visited_BB_prev.end() &&
+            visited_BB_current.find(bb_id_cur) == visited_BB_current.end())
+        {
+            visited_BB_prev.insert(bb_id_prev);
+            visited_BB_current.insert(bb_id_cur);
+            bbBestMatches.emplace(std::make_pair(bb_id_cur,bb_id_prev));
+        }
+    }
+}
+
+std::vector<BoundingBox *> findBoundingBoxesContainingKeypoint(cv::KeyPoint kpt, DataFrame frame)
+{
+    std::vector<BoundingBox *> res;
+    for (auto &bb : frame.boundingBoxes)
+    {
+        if (bb.contains(kpt))
+        {
+            res.push_back(&bb);
+        }
+    }
+    return res;
 }
