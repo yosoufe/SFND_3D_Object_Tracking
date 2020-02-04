@@ -144,9 +144,26 @@ void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPo
 }
 
 void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
-                     std::vector<LidarPoint> &lidarPointsCurr, double frameRate, double &TTC)
+                     std::vector<LidarPoint> &lidarPointsCurr, 
+                     double frameRate, 
+                     double &TTC)
 {
-    // ...
+    double minXPrev = 1e9, minXCurr = 1e9;
+
+    for (auto it = lidarPointsPrev.begin(); it != lidarPointsPrev.end(); ++it)
+    {
+        
+        minXPrev = minXPrev > it->x ? it->x : minXPrev;
+    }
+
+    for (auto it = lidarPointsCurr.begin(); it != lidarPointsCurr.end(); ++it)
+    {
+
+        minXCurr = minXCurr > it->x ? it->x : minXCurr;
+    }
+
+    // compute TTC from both measurements
+    TTC = minXCurr / frameRate / (minXPrev - minXCurr);
 }
 
 void matchBoundingBoxes(std::vector<cv::DMatch> &matches,
@@ -154,13 +171,6 @@ void matchBoundingBoxes(std::vector<cv::DMatch> &matches,
                         DataFrame &prevFrame,
                         DataFrame &currFrame)
 {
-    // ...
-    /**
-     * 1- Use key point mathces between previous and current frame in a loop
-     * 2- In which bounding boxes these matches are enclosed
-     * 3- Count the number of matches for for each bounding box match in the multimap
-     * 4- Associate the bounding boxes with the highest number of match occurrence.
-     */
 
     // current = train
     // previous = query
@@ -172,19 +182,19 @@ void matchBoundingBoxes(std::vector<cv::DMatch> &matches,
     {
         // which bounding boxes have the keypoint in the **previous** frame
         cv::KeyPoint &prev_kpt = prevFrame.keypoints[match.queryIdx];
-        std::vector<BoundingBox *> prev_bb_containing_this_keypoint = findBoundingBoxesContainingKeypoint(prev_kpt, prevFrame);
+        std::vector<int> prev_bb_containing_this_keypoint = findBoundingBoxesContainingKeypoint(prev_kpt, prevFrame);
 
         // which bounding boxes have the keypoint in the **current** frame
         cv::KeyPoint &current_kpt = currFrame.keypoints[match.trainIdx];
-        std::vector<BoundingBox *> cur_bb_containing_this_keypoint = findBoundingBoxesContainingKeypoint(current_kpt, currFrame);
+        std::vector<int> cur_bb_containing_this_keypoint = findBoundingBoxesContainingKeypoint(current_kpt, currFrame);
 
         // increment the occurrence map for all enclosing bounding boxes.
-        for (BoundingBox *prev_ptr : prev_bb_containing_this_keypoint)
+        for (int& prev_id : prev_bb_containing_this_keypoint)
         {
-            for (BoundingBox *cur_ptr : cur_bb_containing_this_keypoint)
+            for (int& cur_id : cur_bb_containing_this_keypoint)
             {
                 // occurrence_map[std::make_pair(prev_ptr->boxID, cur_ptr->boxID)] += 1;
-                occurrence_map[{prev_ptr->boxID, cur_ptr->boxID}] += 1;
+                occurrence_map[{prev_id, cur_id}] += 1;
             }
         }
     }
@@ -220,20 +230,20 @@ void matchBoundingBoxes(std::vector<cv::DMatch> &matches,
         }
     }
 
-    if (true)
+    if (false)
     {
-        printf("number of matched bbs: %lu \n", bbBestMatches.size());
+        printf(" %s: number of matched bbs: %lu \n", __FUNCTION__ , bbBestMatches.size());
     }
 }
 
-std::vector<BoundingBox *> findBoundingBoxesContainingKeypoint(cv::KeyPoint kpt, DataFrame frame)
+std::vector<int> findBoundingBoxesContainingKeypoint(cv::KeyPoint kpt, DataFrame frame)
 {
-    std::vector<BoundingBox *> res;
+    std::vector<int> res;
     for (auto &bb : frame.boundingBoxes)
     {
         if (bb.contains(kpt))
         {
-            res.push_back(&bb);
+            res.push_back(bb.boxID);
         }
     }
     return res;
