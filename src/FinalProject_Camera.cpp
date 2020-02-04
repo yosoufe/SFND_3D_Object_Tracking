@@ -44,6 +44,7 @@ int main(int argc, const char *argv[])
     int bFocusOnVehicle = 0;                      // zero = false, none-zero = True
     int bLimitKpts = 0;                           // zero = false, none-zero = True
     int bVerbose = 0;                             // zero = false, none-zero = True
+    int bDebug = 0;                             // zero = false, none-zero = True
 
     struct argparse_option options[] = {
         OPT_HELP(),
@@ -61,7 +62,8 @@ int main(int argc, const char *argv[])
                                                           "\n\t\t\t\tdefault: SEL_NN"),
         OPT_BOOLEAN('f', "focus_on_vehicle", &bFocusOnVehicle, "To focus on only keypoints that are on the preceding vehicle."),
         OPT_BOOLEAN('l', "limit_keypoints", &bLimitKpts, "To limit the number of keypoints to maximum 50 keypoints."),
-        OPT_BOOLEAN('v', "verbose", &bVerbose, "If this flag is chosen no image would be shown. Good for performance measurement"),
+        OPT_BOOLEAN('v', "verbose", &bVerbose, "verbose"),
+        OPT_BOOLEAN('d', "debug", &bDebug, "showing debug messages"),
         OPT_END()
     };
     struct argparse argparse;
@@ -286,6 +288,7 @@ int main(int argc, const char *argv[])
             // loop over all BB match pairs
             for (auto it1 = (dataBuffer.end() - 1)->bbMatches.begin(); it1 != (dataBuffer.end() - 1)->bbMatches.end(); ++it1)
             {
+                if(bDebug) printf("match %d - %d:\n", it1->first, it1->second);
                 // find bounding boxes associates with current match
                 BoundingBox *prevBB = nullptr, *currBB = nullptr;
                 for (auto it2 = (dataBuffer.end() - 1)->boundingBoxes.begin(); it2 != (dataBuffer.end() - 1)->boundingBoxes.end(); ++it2)
@@ -304,17 +307,20 @@ int main(int argc, const char *argv[])
                     }
                 }
 
-                if (!currBB || !prevBB) std::cout << it1->second << " " << it1->first << std::endl;
+                if (currBB == nullptr || prevBB == nullptr)
+                {
+                    if(bDebug) printf("Something is wrong with matchBoundingBoxes that the box id does not match\n");
+                }
 
                 // compute TTC for current match
-                if( currBB->lidarPoints.size()>0 && prevBB->lidarPoints.size()>0 ) // only compute TTC if we have Lidar points
+                if( currBB->lidarPoints.size()>0 && prevBB->lidarPoints.size()>0 ) // only compute TTC if we have Lidar points (focused on ego lane above)
                 {
                     //// STUDENT ASSIGNMENT
                     //// TASK FP.2 -> compute time-to-collision based on Lidar data (implement -> computeTTCLidar)
                     double ttcLidar; 
                     computeTTCLidar(prevBB->lidarPoints, currBB->lidarPoints, sensorFrameRate, ttcLidar);
                     
-                    printf("TTC for match %d - %d: %f \n", it1->first, it1->second, ttcLidar);
+                    if(bDebug) printf("\t TTC: %f \n", ttcLidar);
                     //// EOF STUDENT ASSIGNMENT
 
                     continue;
@@ -347,7 +353,10 @@ int main(int argc, const char *argv[])
                     }
                     bVis = false;
 
-                } // eof TTC computation
+                } else // eof TTC computation
+                {
+                    if(bDebug && bVerbose) printf("\t No lidar point in the bounding boxes of matches!!! \n");
+                }
             } // eof loop over all BB matches            
 
         }
