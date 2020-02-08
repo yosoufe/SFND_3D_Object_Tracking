@@ -45,6 +45,7 @@ int main(int argc, const char *argv[])
     int bLimitKpts = 0;                           // zero = false, none-zero = True
     int bVerbose = 0;                             // zero = false, none-zero = True
     int bDebug = 0;                             // zero = false, none-zero = True
+    int bResults = 0;                             // zero = false, none-zero = True
 
     struct argparse_option options[] = {
         OPT_HELP(),
@@ -64,6 +65,7 @@ int main(int argc, const char *argv[])
         OPT_BOOLEAN('l', "limit_keypoints", &bLimitKpts, "To limit the number of keypoints to maximum 50 keypoints."),
         OPT_BOOLEAN('v', "verbose", &bVerbose, "verbose"),
         OPT_BOOLEAN('d', "debug", &bDebug, "showing debug messages"),
+        OPT_BOOLEAN('r', "results", &bResults, "showing results messages"),
         OPT_END()
     };
     struct argparse argparse;
@@ -181,7 +183,7 @@ int main(int argc, const char *argv[])
         clusterLidarWithROI((dataBuffer.end()-1)->boundingBoxes, (dataBuffer.end() - 1)->lidarPoints, shrinkFactor, P_rect_00, R_rect_00, RT);
 
         // Visualize 3D objects
-        bVis = false;
+        bVis = bVerbose;
         if(bVis)
         {
             show3DObjects((dataBuffer.end()-1)->boundingBoxes, cv::Size(4.0, 20.0), cv::Size(2000, 2000), true);
@@ -288,7 +290,7 @@ int main(int argc, const char *argv[])
             // loop over all BB match pairs
             for (auto it1 = (dataBuffer.end() - 1)->bbMatches.begin(); it1 != (dataBuffer.end() - 1)->bbMatches.end(); ++it1)
             {
-                if(bDebug) printf("match %d - %d:\n", it1->first, it1->second);
+                // if(bDebug) printf("match %d - %d:\n", it1->first, it1->second);
                 // find bounding boxes associates with current match
                 BoundingBox *prevBB = nullptr, *currBB = nullptr;
                 for (auto it2 = (dataBuffer.end() - 1)->boundingBoxes.begin(); it2 != (dataBuffer.end() - 1)->boundingBoxes.end(); ++it2)
@@ -320,7 +322,7 @@ int main(int argc, const char *argv[])
                     double ttcLidar; 
                     computeTTCLidar(prevBB->lidarPoints, currBB->lidarPoints, sensorFrameRate, ttcLidar);
                     
-                    if(bDebug) printf("\t TTC: %f \n", ttcLidar);
+                    if(bResults) printf("\tTTC from Lidar: %f \n", ttcLidar);
                     //// EOF STUDENT ASSIGNMENT
 
                     continue;

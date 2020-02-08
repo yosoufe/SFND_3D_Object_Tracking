@@ -13,6 +13,8 @@
 
 using namespace std;
 
+#define REFLECTION_THRESHOLD 0.2
+
 // Create groups of Lidar points whose projection into the camera falls into the same bounding box
 void clusterLidarWithROI(std::vector<BoundingBox> &boundingBoxes, std::vector<LidarPoint> &lidarPoints, float shrinkFactor, cv::Mat &P_rect_xx, cv::Mat &R_rect_xx, cv::Mat &RT)
 {
@@ -78,6 +80,8 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
         float xwmin = 1e8, ywmin = 1e8, ywmax = -1e8;
         for (auto it2 = it1->lidarPoints.begin(); it2 != it1->lidarPoints.end(); ++it2)
         {
+            if ((*it2).r < REFLECTION_THRESHOLD)
+                continue;
             // world coordinates
             float xw = (*it2).x; // world position in m with x facing forward from sensor
             float yw = (*it2).y; // world position in m with y facing left from sensor
@@ -152,14 +156,14 @@ void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
 
     for (auto it = lidarPointsPrev.begin(); it != lidarPointsPrev.end(); ++it)
     {
-        
-        minXPrev = minXPrev > it->x ? it->x : minXPrev;
+        if (it->r > REFLECTION_THRESHOLD)
+            minXPrev = minXPrev > it->x ? it->x : minXPrev;
     }
 
     for (auto it = lidarPointsCurr.begin(); it != lidarPointsCurr.end(); ++it)
     {
-
-        minXCurr = minXCurr > it->x ? it->x : minXCurr;
+        if (it->r > REFLECTION_THRESHOLD)
+            minXCurr = minXCurr > it->x ? it->x : minXCurr;
     }
 
     // compute TTC from both measurements
