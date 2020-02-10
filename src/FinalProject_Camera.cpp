@@ -40,6 +40,7 @@ int main(int argc, const char *argv[])
     const char *matcherTypeC = "MAT_BF";   // MAT_BF, MAT_FLANN
     const char *descriptorTypeC = "BRISK"; // BRISK BRIEF, ORB, FREAK, AKAZE, SIFT
     const char *selectorTypeC = "SEL_NN";  // SEL_NN, SEL_KNN
+    float reflectiveThreshold = 0.2;
     int bFocusOnVehicle = 0;               // zero = false, none-zero = True
     int bLimitKpts = 0;                    // zero = false, none-zero = True
     int bVerbose = 0;                      // zero = false, none-zero = True
@@ -50,7 +51,7 @@ int main(int argc, const char *argv[])
 
     struct argparse_option options[] = {
         OPT_HELP(),
-        OPT_GROUP("Optional Arguments: "),
+        OPT_GROUP("Keypoint Detection and Matching Arguments: "),
         OPT_STRING('\0', "detector_type", &detectorTypeC, "detector type, options: SHITOMASI, HARRIS, FAST, BRISK, ORB, AKAZE, and SIFT"
                                                           "\n\t\t\t\tif compiled (WITH_CUDA on): ORB_CUDA, FAST_CUDA"
                                                           "\n\t\t\t\tdefault: ORB"),
@@ -65,6 +66,9 @@ int main(int argc, const char *argv[])
         OPT_BOOLEAN('f', "focus_on_vehicle", &bFocusOnVehicle, "To focus on only keypoints that are on the preceding vehicle."),
         OPT_BOOLEAN('l', "limit_keypoints", &bLimitKpts, "To limit the number of keypoints to maximum 50 keypoints."),
         // OPT_BOOLEAN('r', "results", &bResults, "showing TTC measurements"),
+        OPT_GROUP("TTC Calculation Arguments: "),
+        OPT_FLOAT('t', "reflectiveness", &reflectiveThreshold, "minimum reflectiveness to be used for Lidar TTC calculation"
+                                                               "\n\t\t\t\tdefault: 0.2"),
         OPT_BOOLEAN('\0', "top_view", &bTopView, "Lidar Top View"),
         OPT_BOOLEAN('\0', "camera_view", &bCamerView, "Camera View"),
         OPT_BOOLEAN('v', "verbose", &bVerbose, "logging the steps of the program that are being started or finished."),
