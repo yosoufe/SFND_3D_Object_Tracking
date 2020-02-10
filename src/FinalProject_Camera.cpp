@@ -223,7 +223,7 @@ int main(int argc, const char *argv[])
         // Visualize 3D objects
         if (bTopView)
         {
-            show3DObjects((dataBuffer.end() - 1)->boundingBoxes, cv::Size(4.0, 20.0), cv::Size(2000, 2000), true);
+            show3DObjects((dataBuffer.end() - 1)->boundingBoxes, cv::Size(4.0, 20.0), cv::Size(2000, 2000), reflectiveThreshold, true);
         }
 
         if (bVerbose)
@@ -359,7 +359,7 @@ int main(int argc, const char *argv[])
                     //// STUDENT ASSIGNMENT
                     //// TASK FP.2 -> compute time-to-collision based on Lidar data (implement -> computeTTCLidar)
                     double ttcLidar;
-                    computeTTCLidar(prevBB->lidarPoints, currBB->lidarPoints, sensorFrameRate, ttcLidar);
+                    computeTTCLidar(prevBB->lidarPoints, currBB->lidarPoints, sensorFrameRate, ttcLidar, reflectiveThreshold);
 
                     if (bResults)
                         printf("\tTTC from Lidar: %f \n", ttcLidar);

@@ -24,7 +24,8 @@ void matchBoundingBoxes(std::vector<cv::DMatch> &matches,
 
 void show3DObjects(std::vector<BoundingBox> &boundingBoxes,
                    cv::Size worldSize,
-                   cv::Size imageSize,
+                   cv::Size imageSize, 
+                   float minimumReflectiveness,
                    bool bWait = true);
 
 void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev,
@@ -37,7 +38,8 @@ void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev,
 void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
                      std::vector<LidarPoint> &lidarPointsCurr,
                      double frameRate,
-                     double &TTC);
+                     double &TTC, 
+                     float minimumReflectiveness);
 
 std::vector<int> findBoundingBoxesContainingKeypoint(cv::KeyPoint kpt,
                                                                DataFrame frame);

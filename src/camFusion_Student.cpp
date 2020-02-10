@@ -13,8 +13,6 @@
 
 using namespace std;
 
-#define REFLECTION_THRESHOLD 0.2
-
 // Create groups of Lidar points whose projection into the camera falls into the same bounding box
 void clusterLidarWithROI(std::vector<BoundingBox> &boundingBoxes, std::vector<LidarPoint> &lidarPoints, float shrinkFactor, cv::Mat &P_rect_xx, cv::Mat &R_rect_xx, cv::Mat &RT)
 {
@@ -64,7 +62,8 @@ void clusterLidarWithROI(std::vector<BoundingBox> &boundingBoxes, std::vector<Li
     } // eof loop over all Lidar points
 }
 
-void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, cv::Size imageSize, bool bWait)
+void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, cv::Size imageSize, 
+                     float minimumReflectiveness, bool bWait)
 {
     // create topview image
     cv::Mat topviewImg(imageSize, CV_8UC3, cv::Scalar(255, 255, 255));
@@ -80,7 +79,7 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
         float xwmin = 1e8, ywmin = 1e8, ywmax = -1e8;
         for (auto it2 = it1->lidarPoints.begin(); it2 != it1->lidarPoints.end(); ++it2)
         {
-            if ((*it2).r < REFLECTION_THRESHOLD)
+            if ((*it2).r < minimumReflectiveness)
                 continue;
             // world coordinates
             float xw = (*it2).x; // world position in m with x facing forward from sensor
@@ -236,19 +235,20 @@ void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPo
 void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
                      std::vector<LidarPoint> &lidarPointsCurr,
                      double frameRate,
-                     double &TTC)
+                     double &TTC, 
+                     float minimumReflectiveness)
 {
     double minXPrev = 1e9, minXCurr = 1e9;
 
     for (auto it = lidarPointsPrev.begin(); it != lidarPointsPrev.end(); ++it)
     {
-        if (it->r > REFLECTION_THRESHOLD)
+        if (it->r > minimumReflectiveness)
             minXPrev = minXPrev > it->x ? it->x : minXPrev;
     }
 
     for (auto it = lidarPointsCurr.begin(); it != lidarPointsCurr.end(); ++it)
     {
-        if (it->r > REFLECTION_THRESHOLD)
+        if (it->r > minimumReflectiveness)
             minXCurr = minXCurr > it->x ? it->x : minXCurr;
     }
 
