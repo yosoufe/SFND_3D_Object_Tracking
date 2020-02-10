@@ -157,7 +157,7 @@ the distance between the same keypoints in the second frame, and
 <img src="https://latex.codecogs.com/gif.latex?\Delta&space;t" title="\Delta t" /> 
 is the time difference between these frames. 
 <img src="https://latex.codecogs.com/gif.latex?h_1/h_0" title="h_1/h_0" /> is called 
-distance ration or `distRatio` in the code. Distance ration is calculated for all keypoints pairs which 
+distance ration or `distRatio` in the code. Distance ration is calculated for all keypoint pairs which 
 are at the minimum distance of 100 (pixels) from each other on the same frame. 
 
 ```c++
