@@ -64,28 +64,28 @@ In this final project, the missing parts in the schematic are being implemented 
         Usage: ./3D_feature_tracking [args]
         For example: ./3D_feature_tracking --detector_type=BRISK --matcher_type=MAT_FLANN --descriptor_type=DES_BINARY --selector_type=SEL_KNN
 
-        Explores different 2d keypoint detector, descriptor and matching
+        Calculates TTC to the proceeding vehicle using single camera and lidar
 
             -h, --help                    show this help message and exit
 
         Keypoint Detection and Matching Arguments: 
             --detector_type=<str>         detector type, options: SHITOMASI, HARRIS, FAST, BRISK, ORB, AKAZE, and SIFT
-                                        if compiled (WITH_CUDA on): ORB_CUDA, FAST_CUDA
-                                        default: ORB
+                                                if compiled (WITH_CUDA on): ORB_CUDA, FAST_CUDA
+                                                default: ORB
             --matcher_type=<str>          matcher type, options: MAT_BF, MAT_FLANN,
-                                        if compiled (WITH_CUDA on): MAT_BF_CUDA
-                                        default: MAT_BF
+                                                if compiled (WITH_CUDA on): MAT_BF_CUDA
+                                                default: MAT_BF
             --descriptor_type=<str>       descriptor type, options: BRISK, BRIEF, ORB, FREAK, AKAZE, SIFT
-                                        if compiled (WITH_CUDA on): ORB_CUDA
-                                        default: BRISK
+                                                if compiled (WITH_CUDA on): ORB_CUDA
+                                                default: BRISK
             --selector_type=<str>         selector type, options: SEL_NN, SEL_KNN
-                                        default: SEL_NN
+                                                default: SEL_NN
             -f, --focus_on_vehicle        To focus on only keypoints that are on the preceding vehicle.
             -l, --limit_keypoints         To limit the number of keypoints to maximum 50 keypoints.
 
         TTC Calculation Arguments: 
             -t, --reflectiveness=<flt>    minimum reflectiveness to be used for Lidar TTC calculation
-                                        default: 0.2
+                                                default: 0.2
             --top_view                    Lidar Top View
             --camera_view                 Camera View
             -v, --verbose                 logging the steps of the program that are being started or finished.

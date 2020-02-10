@@ -53,22 +53,22 @@ int main(int argc, const char *argv[])
         OPT_HELP(),
         OPT_GROUP("Keypoint Detection and Matching Arguments: "),
         OPT_STRING('\0', "detector_type", &detectorTypeC, "detector type, options: SHITOMASI, HARRIS, FAST, BRISK, ORB, AKAZE, and SIFT"
-                                                          "\n\t\t\t\tif compiled (WITH_CUDA on): ORB_CUDA, FAST_CUDA"
-                                                          "\n\t\t\t\tdefault: ORB"),
+                                                          "\n\t\t\t\t\tif compiled (WITH_CUDA on): ORB_CUDA, FAST_CUDA"
+                                                          "\n\t\t\t\t\tdefault: ORB"),
         OPT_STRING('\0', "matcher_type", &matcherTypeC, "matcher type, options: MAT_BF, MAT_FLANN,"
-                                                        "\n\t\t\t\tif compiled (WITH_CUDA on): MAT_BF_CUDA"
-                                                        "\n\t\t\t\tdefault: MAT_BF"),
+                                                        "\n\t\t\t\t\tif compiled (WITH_CUDA on): MAT_BF_CUDA"
+                                                        "\n\t\t\t\t\tdefault: MAT_BF"),
         OPT_STRING('\0', "descriptor_type", &descriptorTypeC, "descriptor type, options: BRISK, BRIEF, ORB, FREAK, AKAZE, SIFT"
-                                                              "\n\t\t\t\tif compiled (WITH_CUDA on): ORB_CUDA"
-                                                              "\n\t\t\t\tdefault: BRISK"),
+                                                              "\n\t\t\t\t\tif compiled (WITH_CUDA on): ORB_CUDA"
+                                                              "\n\t\t\t\t\tdefault: BRISK"),
         OPT_STRING('\0', "selector_type", &selectorTypeC, "selector type, options: SEL_NN, SEL_KNN"
-                                                          "\n\t\t\t\tdefault: SEL_NN"),
+                                                          "\n\t\t\t\t\tdefault: SEL_NN"),
         OPT_BOOLEAN('f', "focus_on_vehicle", &bFocusOnVehicle, "To focus on only keypoints that are on the preceding vehicle."),
         OPT_BOOLEAN('l', "limit_keypoints", &bLimitKpts, "To limit the number of keypoints to maximum 50 keypoints."),
         // OPT_BOOLEAN('r', "results", &bResults, "showing TTC measurements"),
         OPT_GROUP("TTC Calculation Arguments: "),
         OPT_FLOAT('t', "reflectiveness", &reflectiveThreshold, "minimum reflectiveness to be used for Lidar TTC calculation"
-                                                               "\n\t\t\t\tdefault: 0.2"),
+                                                               "\n\t\t\t\t\tdefault: 0.2"),
         OPT_BOOLEAN('\0', "top_view", &bTopView, "Lidar Top View"),
         OPT_BOOLEAN('\0', "camera_view", &bCamerView, "Camera View"),
         OPT_BOOLEAN('v', "verbose", &bVerbose, "logging the steps of the program that are being started or finished."),
@@ -76,7 +76,7 @@ int main(int argc, const char *argv[])
         OPT_END()};
     struct argparse argparse;
     argparse_init(&argparse, options, usage, 0);
-    argparse_describe(&argparse, "\nExplores different 2d keypoint detector, descriptor and matching", NULL);
+    argparse_describe(&argparse, "\nCalculates TTC to the proceeding vehicle using single camera and lidar", NULL);
     argc = argparse_parse(&argparse, argc, argv);
 
     std::string detectorType(detectorTypeC);
