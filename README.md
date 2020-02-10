@@ -61,8 +61,8 @@ In this final project, the missing parts in the schematic are being implemented 
 
         ```
         $ ./3D_object_tracking -h
-        Usage: ./2D_feature_tracking [args]
-        For example: ./2D_feature_tracking --detector_type=BRISK --matcher_type=MAT_FLANN --descriptor_type=DES_BINARY --selector_type=SEL_KNN -f
+        Usage: ./3D_feature_tracking [args]
+        For example: ./3D_feature_tracking --detector_type=BRISK --matcher_type=MAT_FLANN --descriptor_type=DES_BINARY --selector_type=SEL_KNN -r
 
         Explores different 2d keypoint detector, descriptor and matching
 

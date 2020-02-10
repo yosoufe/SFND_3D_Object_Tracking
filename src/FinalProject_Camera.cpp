@@ -30,8 +30,8 @@ int main(int argc, const char *argv[])
 {
     // parse command line arguments:
     static const char *const usage[] = {
-        "./2D_feature_tracking [args]\n"
-        "For example: ./2D_feature_tracking --detector_type=BRISK --matcher_type=MAT_FLANN --descriptor_type=DES_BINARY --selector_type=SEL_KNN -f",
+        "./3D_feature_tracking [args]\n"
+        "For example: ./3D_feature_tracking --detector_type=BRISK --matcher_type=MAT_FLANN --descriptor_type=DES_BINARY --selector_type=SEL_KNN -r",
         NULL,
         NULL};
 
