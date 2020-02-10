@@ -84,7 +84,7 @@ In this final project, the missing parts in the schematic are being implemented 
             -l, --limit_keypoints         To limit the number of keypoints to maximum 50 keypoints.
 
         TTC Calculation Arguments: 
-            -t, --reflectiveness=<flt>    minimum reflectiveness to be used for Lidar TTC calculation
+            -r, --reflectiveness=<flt>    minimum reflectiveness to be used for Lidar TTC calculation
                                                 default: 0.2
             --top_view                    Lidar Top View
             --camera_view                 Camera View

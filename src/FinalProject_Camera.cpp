@@ -67,7 +67,7 @@ int main(int argc, const char *argv[])
         OPT_BOOLEAN('l', "limit_keypoints", &bLimitKpts, "To limit the number of keypoints to maximum 50 keypoints."),
         // OPT_BOOLEAN('r', "results", &bResults, "showing TTC measurements"),
         OPT_GROUP("TTC Calculation Arguments: "),
-        OPT_FLOAT('t', "reflectiveness", &reflectiveThreshold, "minimum reflectiveness to be used for Lidar TTC calculation"
+        OPT_FLOAT('r', "reflectiveness", &reflectiveThreshold, "minimum reflectiveness to be used for Lidar TTC calculation"
                                                                "\n\t\t\t\t\tdefault: 0.2"),
         OPT_BOOLEAN('\0', "top_view", &bTopView, "Lidar Top View"),
         OPT_BOOLEAN('\0', "camera_view", &bCamerView, "Camera View"),
