@@ -42,11 +42,15 @@ struct comp__f
 std::set<std::pair<bb_pairs, int>, comp__f> boundingBoxPairs(
         occurrence_map.begin(), occurrence_map.end(), comp__f());
 ```
-and then this sorted set used to match the bounding boxes. Complete code can be found in the `camFusion_Student.cpp` file.
+and then this sorted set is used to match the bounding boxes. Complete code can be found in the `camFusion_Student.cpp` file.
 
 <a name="FP2" />
 
 ## FP2 - Compute Lidar-based TTC
+
+The equation to calculate the time to collision (TTC) to the proceeding vehicle that is used for lidar is as follow:
+
+<img align="middle" src="https://latex.codecogs.com/gif.latex?TTC&space;=&space;\frac{-\Delta&space;t}{1-\frac{h_1}{h_0}}" title="TTC = \frac{-\Delta t}{1-\frac{h_1}{h_0}}" />
 
 <a name="FP3" />
 
