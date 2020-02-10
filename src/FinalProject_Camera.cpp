@@ -31,7 +31,7 @@ int main(int argc, const char *argv[])
     // parse command line arguments:
     static const char *const usage[] = {
         "./3D_feature_tracking [args]\n"
-        "For example: ./3D_feature_tracking --detector_type=BRISK --matcher_type=MAT_FLANN --descriptor_type=DES_BINARY --selector_type=SEL_KNN -r",
+        "For example: ./3D_feature_tracking --detector_type=BRISK --matcher_type=MAT_FLANN --descriptor_type=DES_BINARY --selector_type=SEL_KNN",
         NULL,
         NULL};
 
@@ -44,7 +44,9 @@ int main(int argc, const char *argv[])
     int bLimitKpts = 0;                    // zero = false, none-zero = True
     int bVerbose = 0;                      // zero = false, none-zero = True
     int bDebug = 0;                        // zero = false, none-zero = True
-    int bResults = 0;                      // zero = false, none-zero = True
+    int bResults = 1;                      // zero = false, none-zero = True
+    int bTopView = 0;
+    int bCamerView = 0;
 
     struct argparse_option options[] = {
         OPT_HELP(),
@@ -62,9 +64,11 @@ int main(int argc, const char *argv[])
                                                           "\n\t\t\t\tdefault: SEL_NN"),
         OPT_BOOLEAN('f', "focus_on_vehicle", &bFocusOnVehicle, "To focus on only keypoints that are on the preceding vehicle."),
         OPT_BOOLEAN('l', "limit_keypoints", &bLimitKpts, "To limit the number of keypoints to maximum 50 keypoints."),
-        OPT_BOOLEAN('v', "verbose", &bVerbose, "verbose"),
-        OPT_BOOLEAN('d', "debug", &bDebug, "showing debug messages"),
-        OPT_BOOLEAN('r', "results", &bResults, "showing results messages"),
+        // OPT_BOOLEAN('r', "results", &bResults, "showing TTC measurements"),
+        OPT_BOOLEAN('\0', "top_view", &bTopView, "Lidar Top View"),
+        OPT_BOOLEAN('\0', "camera_view", &bCamerView, "Camera View"),
+        OPT_BOOLEAN('v', "verbose", &bVerbose, "logging the steps of the program that are being started or finished."),
+        OPT_BOOLEAN('d', "debug", &bDebug, "showing debug messages."),
         OPT_END()};
     struct argparse argparse;
     argparse_init(&argparse, options, usage, 0);
@@ -213,12 +217,10 @@ int main(int argc, const char *argv[])
         clusterLidarWithROI((dataBuffer.end() - 1)->boundingBoxes, (dataBuffer.end() - 1)->lidarPoints, shrinkFactor, P_rect_00, R_rect_00, RT);
 
         // Visualize 3D objects
-        bVis = bVerbose;
-        if (bVis)
+        if (bTopView)
         {
             show3DObjects((dataBuffer.end() - 1)->boundingBoxes, cv::Size(4.0, 20.0), cv::Size(2000, 2000), true);
         }
-        bVis = false;
 
         if (bVerbose)
             cout << "#4 : CLUSTER LIDAR POINT CLOUD done" << endl;
@@ -378,7 +380,6 @@ int main(int argc, const char *argv[])
                         printf("\tTTC from Camera: %f \n", ttcCamera);
                     //// EOF STUDENT ASSIGNMENT
 
-                    bVis = true;
                     if (bVis)
                     {
                         cv::Mat visImg = (dataBuffer.end() - 1)->cameraImg.clone();
@@ -395,11 +396,10 @@ int main(int argc, const char *argv[])
                         cout << "Press key to continue to next frame" << endl;
                         cv::waitKey(0);
                     }
-                    bVis = false;
                 }
                 else // eof TTC computation
                 {
-                    if (bDebug && bVerbose)
+                    if (bDebug)
                         printf("\t No lidar point in the bounding boxes of matches!!! \n");
                 }
             } // eof loop over all BB matches

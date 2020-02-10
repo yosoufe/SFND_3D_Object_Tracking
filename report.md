@@ -13,6 +13,8 @@
 
 ## Introduction
 This is a report to cover the PROJECT SPECIFICATION for 3rd project of Sensor Fusion Nanodegree, **3D Object Tracking**.
+The main goal is to calculate time to collision (TTC) to the proceeding vehicle 
+using single camera and lidar.
 
 
 <a name="FP1" />
