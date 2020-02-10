@@ -151,7 +151,7 @@ Main equation to calculate the TTC based on monocular imaging is as the followin
 <img align="middle" src="https://latex.codecogs.com/gif.latex?TTC&space;=&space;\frac{-\Delta&space;t}{1-\frac{h_1}{h_0}}" title="TTC = \frac{-\Delta t}{1-\frac{h_1}{h_0}}" />
 
 which <img src="https://latex.codecogs.com/gif.latex?h_1" title="h_1" /> is 
-the distance between two keypoint in the first frame and 
+the distance between two keypoints in the first frame and 
 <img src="https://latex.codecogs.com/gif.latex?h_2" title="h_2" /> is
 the distance between the same keypoints in the second frame, and
 <img src="https://latex.codecogs.com/gif.latex?\Delta&space;t" title="\Delta t" /> 
