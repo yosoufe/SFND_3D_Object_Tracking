@@ -47,7 +47,7 @@ int main(int argc, const char *argv[])
     int bDebug = 0;                        // zero = false, none-zero = True
     int bResults = 1;                      // zero = false, none-zero = True
     int bTopView = 0;
-    int bCamerView = 0;
+    int bCameraView = 0;
 
     struct argparse_option options[] = {
         OPT_HELP(),
@@ -70,7 +70,7 @@ int main(int argc, const char *argv[])
         OPT_FLOAT('r', "reflectiveness", &reflectiveThreshold, "minimum reflectiveness to be used for Lidar TTC calculation"
                                                                "\n\t\t\t\t\tdefault: 0.2"),
         OPT_BOOLEAN('\0', "top_view", &bTopView, "Lidar Top View"),
-        OPT_BOOLEAN('\0', "camera_view", &bCamerView, "Camera View"),
+        OPT_BOOLEAN('\0', "camera_view", &bCameraView, "Camera View"),
         OPT_BOOLEAN('v', "verbose", &bVerbose, "logging the steps of the program that are being started or finished."),
         OPT_BOOLEAN('d', "debug", &bDebug, "showing debug messages."),
         OPT_END()};
@@ -384,7 +384,7 @@ int main(int argc, const char *argv[])
                         printf("\tTTC from Camera: %f \n", ttcCamera);
                     //// EOF STUDENT ASSIGNMENT
 
-                    if (bVis)
+                    if (bCameraView)
                     {
                         cv::Mat visImg = (dataBuffer.end() - 1)->cameraImg.clone();
                         showLidarImgOverlay(visImg, currBB->lidarPoints, P_rect_00, R_rect_00, RT, &visImg);
