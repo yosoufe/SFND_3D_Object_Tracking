@@ -19,6 +19,31 @@ This is a report to cover the PROJECT SPECIFICATION for 3rd project of Sensor Fu
 
 ## FP1 - Match 3D Objects
 
+The goal in this section is to match bounding boxes between two frames. In order to 
+achieve this, a map from bounding pairs to the number of matched keypoints in those 
+frames is created which is defined like the following in the `matchBoundingBoxes` 
+function.
+```c++
+typedef std::pair<int, int> bb_pairs; // pair of bounding box ids
+std::unordered_map<bb_pairs, int, CustomHash> occurrence_map;
+```
+Then all the matches are iterated and `occurrence_map` is incremented for any keypoint
+match that has been visited inside the `matches` vector. Then the `occurrence_map` 
+is sorted based on the number of occurrence in a set as the following:
+```c++
+struct comp__f
+{
+    bool operator()(const std::pair<bb_pairs, int> &lhs, const std::pair<bb_pairs, int> &rhs) const
+    {
+        return lhs.second > rhs.second;
+    }
+};
+
+std::set<std::pair<bb_pairs, int>, comp__f> boundingBoxPairs(
+        occurrence_map.begin(), occurrence_map.end(), comp__f());
+```
+and then this sorted set used to match the bounding boxes. Complete code can be found in the `camFusion_Student.cpp` file.
+
 <a name="FP2" />
 
 ## FP2 - Compute Lidar-based TTC

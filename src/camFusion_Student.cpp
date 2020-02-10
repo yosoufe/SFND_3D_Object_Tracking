@@ -288,7 +288,6 @@ void matchBoundingBoxes(std::vector<cv::DMatch> &matches,
         {
             for (int &cur_id : cur_bb_containing_this_keypoint)
             {
-                // occurrence_map[std::make_pair(prev_ptr->boxID, cur_ptr->boxID)] += 1;
                 occurrence_map[{prev_id, cur_id}] += 1;
             }
         }
