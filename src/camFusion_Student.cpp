@@ -135,21 +135,112 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
 }
 
 // associate a given bounding box with the keypoints it contains
-void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches)
+void clusterKptMatchesWithROI(BoundingBox &boundingBox,
+                              std::vector<cv::KeyPoint> &kptsPrev,
+                              std::vector<cv::KeyPoint> &kptsCurr,
+                              std::vector<cv::DMatch> &kptMatches)
 {
-    // ...
+    // current = train
+    // previous = query
+
+    std::vector<cv::DMatch> temp_result;
+    std::vector<double> eucleadian_distances;
+    for (auto &match : kptMatches)
+    {
+        cv::KeyPoint &prevkp = kptsPrev[match.queryIdx];
+        cv::KeyPoint &currkp = kptsCurr[match.trainIdx];
+
+        if (boundingBox.contains(prevkp) && boundingBox.contains(currkp))
+        {
+            temp_result.push_back(match);
+
+            eucleadian_distances.push_back(
+                std::sqrt(
+                    ((prevkp.pt.x - currkp.pt.x) * (prevkp.pt.x - currkp.pt.x)) +
+                    ((prevkp.pt.y - currkp.pt.y) * (prevkp.pt.y - currkp.pt.y))
+                )
+            );
+        }
+    }
+
+    // calculate the mean and std of distances
+    double mean = std::accumulate(eucleadian_distances.begin(), eucleadian_distances.end(), 0.0)/eucleadian_distances.size();
+    auto add_square = [mean](double current_accumulation, double  elem)
+    {
+        auto d = elem - mean;
+        return current_accumulation + d*d;
+    };
+    double sigmaN = std::accumulate(eucleadian_distances.begin(), eucleadian_distances.end(), 0.0, add_square);
+    double standard_deviation = std::sqrt( sigmaN / eucleadian_distances.size());
+
+    // just use the matches that their distance are within the standard deviation
+    for (size_t index = 0; index < temp_result.size(); index++)
+    {
+        if (std::fabs( eucleadian_distances[index] - mean) < standard_deviation/2 )
+            boundingBox.kptMatches.push_back(temp_result[index]);
+    }
+    // std:: cout << temp_result.size() - boundingBox.kptMatches.size() << " removed" << std::endl;
 }
 
 // Compute time-to-collision (TTC) based on keypoint correspondences in successive images
 void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr,
                       std::vector<cv::DMatch> kptMatches, double frameRate, double &TTC, cv::Mat *visImg)
 {
-    // ...
+    // compute distance ratios between all matched keypoints
+    vector<double> distRatios; // stores the distance ratios for all keypoints between curr. and prev. frame
+    double minDist = 100.0; // min. required distance
+    for (auto it1 = kptMatches.begin(); it1 != kptMatches.end() - 1; ++it1)
+    { // outer kpt. loop
+
+        // get current keypoint and its matched partner in the prev. frame
+        cv::KeyPoint kpOuterCurr = kptsCurr.at(it1->trainIdx);
+        cv::KeyPoint kpOuterPrev = kptsPrev.at(it1->queryIdx);
+
+        for (auto it2 = kptMatches.begin() + 1; it2 != kptMatches.end(); ++it2)
+        { // inner kpt.-loop
+
+            // get next keypoint and its matched partner in the prev. frame
+            cv::KeyPoint kpInnerCurr = kptsCurr.at(it2->trainIdx);
+            cv::KeyPoint kpInnerPrev = kptsPrev.at(it2->queryIdx);
+
+            // compute distances and distance ratios
+            double distCurr = cv::norm(kpOuterCurr.pt - kpInnerCurr.pt);
+            double distPrev = cv::norm(kpOuterPrev.pt - kpInnerPrev.pt);
+
+            if (distPrev > std::numeric_limits<double>::epsilon() && distCurr >= minDist)
+            { // avoid division by zero
+
+                double distRatio = distCurr / distPrev;
+                distRatios.push_back(distRatio);
+            }
+        } // eof inner loop over all matched kpts
+    }     // eof outer loop over all matched kpts
+
+    // only continue if list of distance ratios is not empty
+    if (distRatios.size() == 0)
+    {
+        TTC = NAN;
+        return;
+    }
+
+    // STUDENT TASK (replacement for meanDistRatio)
+    std::sort(distRatios.begin(), distRatios.end());
+    long medIndex = floor(distRatios.size() / 2.0);
+    double medDistRatio = distRatios.size() % 2 == 0 ? (distRatios[medIndex - 1] + distRatios[medIndex]) / 2.0 : distRatios[medIndex]; // compute median dist. ratio to remove outlier influence
+    
+
+    float dT = 1 / frameRate;
+    TTC = -dT / (1 - medDistRatio);
+    if (visImg)
+    {
+
+    }
+    // EOF STUDENT TASK
 }
 
 void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
-                     std::vector<LidarPoint> &lidarPointsCurr, 
-                     double frameRate, 
+                     std::vector<LidarPoint> &lidarPointsCurr,
+                     double frameRate,
                      double &TTC)
 {
     double minXPrev = 1e9, minXCurr = 1e9;
@@ -193,9 +284,9 @@ void matchBoundingBoxes(std::vector<cv::DMatch> &matches,
         std::vector<int> cur_bb_containing_this_keypoint = findBoundingBoxesContainingKeypoint(current_kpt, currFrame);
 
         // increment the occurrence map for all enclosing bounding boxes.
-        for (int& prev_id : prev_bb_containing_this_keypoint)
+        for (int &prev_id : prev_bb_containing_this_keypoint)
         {
-            for (int& cur_id : cur_bb_containing_this_keypoint)
+            for (int &cur_id : cur_bb_containing_this_keypoint)
             {
                 // occurrence_map[std::make_pair(prev_ptr->boxID, cur_ptr->boxID)] += 1;
                 occurrence_map[{prev_id, cur_id}] += 1;
@@ -230,13 +321,13 @@ void matchBoundingBoxes(std::vector<cv::DMatch> &matches,
         {
             visited_BB_prev.insert(bb_id_prev);
             visited_BB_current.insert(bb_id_cur);
-            bbBestMatches.emplace(std::make_pair(bb_id_prev,bb_id_cur));
+            bbBestMatches.emplace(std::make_pair(bb_id_prev, bb_id_cur));
         }
     }
 
     if (false)
     {
-        printf(" %s: number of matched bbs: %lu \n", __FUNCTION__ , bbBestMatches.size());
+        printf(" %s: number of matched bbs: %lu \n", __FUNCTION__, bbBestMatches.size());
     }
 }
 
