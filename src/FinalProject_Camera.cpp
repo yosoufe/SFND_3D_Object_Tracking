@@ -57,7 +57,7 @@ int main(int argc, const char *argv[])
         OPT_STRING('\0', "matcher_type", &matcherTypeC, "matcher type, options: MAT_BF, MAT_FLANN,"
                                                         "\n\t\t\t\tif compiled (WITH_CUDA on): MAT_BF_CUDA"
                                                         "\n\t\t\t\tdefault: MAT_BF"),
-        OPT_STRING('\0', "descriptor_type", &descriptorTypeC, "descriptor type, options: BRISK BRIEF, ORB, FREAK, AKAZE, SIFT"
+        OPT_STRING('\0', "descriptor_type", &descriptorTypeC, "descriptor type, options: BRISK, BRIEF, ORB, FREAK, AKAZE, SIFT"
                                                               "\n\t\t\t\tif compiled (WITH_CUDA on): ORB_CUDA"
                                                               "\n\t\t\t\tdefault: BRISK"),
         OPT_STRING('\0', "selector_type", &selectorTypeC, "selector type, options: SEL_NN, SEL_KNN"

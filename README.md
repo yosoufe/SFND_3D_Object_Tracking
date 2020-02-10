@@ -75,7 +75,7 @@ In this final project, the missing parts in the schematic are being implemented 
             --matcher_type=<str>      matcher type, options: MAT_BF, MAT_FLANN,
                                         if compiled (WITH_CUDA on): MAT_BF_CUDA
                                         default: MAT_BF
-            --descriptor_type=<str>   descriptor type, options: BRISK BRIEF, ORB, FREAK, AKAZE, SIFT
+            --descriptor_type=<str>   descriptor type, options: BRISK, BRIEF, ORB, FREAK, AKAZE, SIFT
                                         if compiled (WITH_CUDA on): ORB_CUDA
                                         default: BRISK
             --selector_type=<str>     selector type, options: SEL_NN, SEL_KNN
