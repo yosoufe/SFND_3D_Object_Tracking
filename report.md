@@ -139,14 +139,64 @@ for (size_t index = 0; index < temp_result.size(); index++)
 }
 ```
 
-The complete code can be found in `clusterKptMatchesWithROI` function of 
+The complete code can be found in `clusterKptMatchesWithROI` function in 
 `camFusion_Student.cpp` file.
 
 <a name="FP4" />
 
 ## FP4 - Compute Camera-based TTC
 
+Main equation to calculate the TTC based on monocular imaging is as the following:
+
 <img align="middle" src="https://latex.codecogs.com/gif.latex?TTC&space;=&space;\frac{-\Delta&space;t}{1-\frac{h_1}{h_0}}" title="TTC = \frac{-\Delta t}{1-\frac{h_1}{h_0}}" />
+
+which <img src="https://latex.codecogs.com/gif.latex?h_1" title="h_1" /> is 
+the distance between two keypoint in the first frame and 
+<img src="https://latex.codecogs.com/gif.latex?h_2" title="h_2" /> is
+the distance between the same keypoints in the second frame, and
+<img src="https://latex.codecogs.com/gif.latex?\Delta&space;t" title="\Delta t" /> 
+is the time difference between these frames. 
+<img src="https://latex.codecogs.com/gif.latex?\frac{h_1}{h_0}" title="\frac{h_1}{h_0}" /> is called 
+distance ration or `distRatio` in the code. Distance ration is calculated for all keypoints pairs which 
+are at the minimum distance of 100 (pixels) from each other on the same frame. 
+
+```c++
+vector<double> distRatios; // stores the distance ratios for all keypoint
+double minDist = 100.0; // min. required distance
+for (auto it1 = kptMatches.begin(); it1 != kptMatches.end() - 1; ++it1)
+{ // outer kpt. loop
+    // get current keypoint and its matched partner in the prev. frame
+    cv::KeyPoint kpOuterCurr = kptsCurr.at(it1->trainIdx);
+    cv::KeyPoint kpOuterPrev = kptsPrev.at(it1->queryIdx);
+    for (auto it2 = kptMatches.begin() + 1; it2 != kptMatches.end(); ++it
+    { // inner kpt.-loop
+        // get next keypoint and its matched partner in the prev. frame
+        cv::KeyPoint kpInnerCurr = kptsCurr.at(it2->trainIdx);
+        cv::KeyPoint kpInnerPrev = kptsPrev.at(it2->queryIdx);
+        // compute distances and distance ratios
+        double distCurr = cv::norm(kpOuterCurr.pt - kpInnerCurr.pt);
+        double distPrev = cv::norm(kpOuterPrev.pt - kpInnerPrev.pt);
+        if (distPrev > std::numeric_limits<double>::epsilon() && distCurr
+        { // avoid division by zero
+            double distRatio = distCurr / distPrev;
+            distRatios.push_back(distRatio);
+        }
+    } // eof inner loop over all matched kpts
+}     // eof outer loop over all matched kpts
+```
+
+Then the median of the all distance ratios are used in the above equation
+to calculate TTC as follow
+
+```c++
+// compute median dist. ratio to remove outlier influence
+std::sort(distRatios.begin(), distRatios.end());
+long medIndex = floor(distRatios.size() / 2.0);
+double medDistRatio = distRatios.size() % 2 == 0 ? (distRatios[medIndex - 1] + distRatios[medIndex]) / 2.0 : distRatios[medIndex];
+    
+float dT = 1 / frameRate;
+TTC = -dT / (1 - medDistRatio);
+```
 
 <a name="FP5" />
 

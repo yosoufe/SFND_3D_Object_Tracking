@@ -153,7 +153,6 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBox,
         if (boundingBox.contains(prevkp) && boundingBox.contains(currkp))
         {
             temp_result.push_back(match);
-
             eucleadian_distances.push_back(
                 std::sqrt(
                     ((prevkp.pt.x - currkp.pt.x) * (prevkp.pt.x - currkp.pt.x)) +
@@ -231,10 +230,6 @@ void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPo
 
     float dT = 1 / frameRate;
     TTC = -dT / (1 - medDistRatio);
-    if (visImg)
-    {
-
-    }
     // EOF STUDENT TASK
 }
 
