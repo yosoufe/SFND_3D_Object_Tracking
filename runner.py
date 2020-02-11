@@ -65,57 +65,59 @@ def run_command(detector_type="ORB",
     return_code = proc.wait()
 
 
-def save_plot_ttc_lidar(ttc: list, thresholds):
-    # Data for plotting
-    frame_number = range(2, len(ttc)+2)
 
+def task_5_process(threshold):
+    camera_ttc_re = re.compile(".*TTC from Lidar: (.+).*")
+    runner = run_command(minReflectiveness=threshold)
+    ttc = []
+    for line in runner:
+        match_ext = camera_ttc_re.match(line)
+        # print(line)
+        if match_ext:
+            # print(match_ext.group(1))
+            ttc.append(float(match_ext.group(1)))
+    assert (len(ttc) == NUMBER_OF_EXPECTED_RESULTS), "len(ttc): {} \nttc: {}".format(len(ttc), ttc)
+    return ttc, threshold
+
+def plot_ttc_lidar(file):
+    results = pickle.load( open( file, "rb" ) )
+    results = results["res"]
     fig, ax = plt.subplots()
-    ax.plot(frame_number, ttc)
+    fig.set_size_inches([10*2,8*2])
+    legends = []
+    for ttc, thre in results:
+        legends.append("Threshold {}".format(thre))
+        ax.plot(range(2, 2+len(ttc)),ttc)
+    
+    ax.set_ylim([-100,150])
+    ax.legend(legends, loc='upper right')
 
-    ax.set(xlabel='frame number', ylabel='TTC from Lidar (s)',
-        title='TTC calculations for different thresholds')
+    ax.set(xlabel='frame', ylabel='TTC (s)',
+        title='TTC from LIDAR with different reflectiveness lower threshold')
     ax.grid()
-    th = thresholds
-    fig.savefig("t5t{}.png".format(th))
     plt.show()
+    fig.savefig("results/task_5.png")
+
 
 
 
 def task_5():
     print("Task 5: Run the executable with different reflective threshold")
-    # camera_ttc_re = re.compile(".*TTC from Lidar: {}.*".format(FLOATING_PATTERN_REGEX))
-    camera_ttc_re = re.compile(".*TTC from Lidar: (.+).*")
     n = 10
     ttcs = []
-    thresholds = []
-
-    # pool = Pool(os.cpu_count())
-
-    for threshold in [x/n for x in range (0,n)]:
-        runner = run_command(minReflectiveness=threshold)
-        ttc = []
-        for line in runner:
-            match_ext = camera_ttc_re.match(line)
-            # print(line)
-            if match_ext:
-                # print(match_ext.group(1))
-                ttc.append(float(match_ext.group(1)))
-        assert (len(ttc) == NUMBER_OF_EXPECTED_RESULTS), "len(ttc): {} \nttc: {}".format(len(ttc), ttc)
-        ttcs.append(ttc)
-        thresholds.append(threshold)
-        print(threshold, ttc)
-
-    res_to_save = {"res": ttcs , "thresholds": thresholds}
-    pickle.dump( res_to_save, open( "results/liadar_ttcs_vs_ths.p", "wb" ) )
-        # save_plot_ttc_lidar(ttc, threshold)
-
-
+    thresholds = [x/n for x in range (0,n)]
+    # run different parameters on different processes in parallel.
+    with Pool(min(os.cpu_count(),20)) as pool:
+        res = pool.map(task_5_process, thresholds)
+        print(res)
+        res_to_save = {"res": res }
+        file = "results/lidar_ttcs_vs_ths.p"
+        pickle.dump( res_to_save, open( file, "wb" ) )
+        plot_ttc_lidar(file)
 
 
 def task_6():
     print("task 6")
-
-
 
 
 def tes_reg_exp():
@@ -130,6 +132,8 @@ def tes_reg_exp():
 
 if __name__ == "__main__":
     # tes_reg_exp()
+    plot_ttc_lidar("results/lidar_ttcs_vs_ths.p")
+    exit(0)
     parser = argparse.ArgumentParser(description='A runner to run the executable inside' +
                                      'the build directory with different parameters')
     parser.add_argument('--tasks',type=int, choices=[5, 6], required=True, nargs='+',
