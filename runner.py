@@ -26,7 +26,7 @@ WORKING_DIR = "build"
 
 FLOATING_PATTERN_REGEX = "([0-9]*.[0-9]+)"
 
-NUMBER_OF_EXPECTED_RESULTS = 17
+NUMBER_OF_EXPECTED_RESULTS = 74
 
 
 def run_command(detector_type="ORB",
@@ -76,7 +76,7 @@ def task_5_process(threshold):
         if match_ext:
             # print(match_ext.group(1))
             ttc.append(float(match_ext.group(1)))
-    assert (len(ttc) == NUMBER_OF_EXPECTED_RESULTS), "len(ttc): {} \nttc: {}".format(len(ttc), ttc)
+    # assert (len(ttc) == NUMBER_OF_EXPECTED_RESULTS), "len(ttc): {} \nttc: {}".format(len(ttc), ttc)
     return ttc, threshold
 
 def plot_ttc_lidar(file):
@@ -132,8 +132,8 @@ def tes_reg_exp():
 
 if __name__ == "__main__":
     # tes_reg_exp()
-    plot_ttc_lidar("results/lidar_ttcs_vs_ths.p")
-    exit(0)
+    # plot_ttc_lidar("results/lidar_ttcs_vs_ths.p")
+    # exit(0)
     parser = argparse.ArgumentParser(description='A runner to run the executable inside' +
                                      'the build directory with different parameters')
     parser.add_argument('--tasks',type=int, choices=[5, 6], required=True, nargs='+',
