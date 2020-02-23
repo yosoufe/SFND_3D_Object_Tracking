@@ -32,6 +32,7 @@ In this final project, the missing parts in the schematic are being implemented 
   * Windows: recommend using [MinGW](http://www.mingw.org/)
 * for argument parsing I am using [argparse in this github repo](https://github.com/cofyc/argparse)
    which is already included as a submodule here.
+* pcl `sudo apt install libpcl-dev`
 
 ## Basic Build Instructions
 
