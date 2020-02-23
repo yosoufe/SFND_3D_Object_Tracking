@@ -190,13 +190,6 @@ for (size_t index = 0; index < temp_result.size(); index++)
 The complete code can be found in `clusterKptMatchesWithROI` function in 
 `camFusion_Student.cpp` file.
 
-I am also using the same technique here as in clustering the point clouds. Basically I am 
-removing the keypoints that are belong to two or more bounding boxes and only keep 
-the ones that are unique to single bounding box. For this purpose I had to move the position
-of this function to one layer on top and do minor changes to the prototype 
-of the function `clusterKptMatchesWithROI`. For more details please take a look at the
-source code.
-
 <a name="FP4" />
 
 ## FP4 - Compute Camera-based TTC
@@ -252,6 +245,14 @@ double medDistRatio = distRatios.size() % 2 == 0 ? (distRatios[medIndex - 1] + d
 float dT = 1 / frameRate;
 TTC = -dT / (1 - medDistRatio);
 ```
+
+
+I am also using the same technique here as in clustering the point clouds. Basically I am 
+removing the keypoints that are belonging to two or more bounding boxes and only keep 
+the ones that are unique to single bounding box. For this purpose I had to move the position
+of this function to one layer on top and do minor changes to the prototype 
+of the function `clusterKptMatchesWithROI`. For more details please take a look at the
+source code.
 
 <a name="FP5" />
 
@@ -315,3 +316,26 @@ keypoint detectors and descriptors. The following graph is showing the results.
 The same story as the lidar graph is happening for the frames 52 and above because of the same reason
 of approximately constant distance between the ego and the preceding vehicle.
 
+Let's take a look at `HARRIS`-`ORB` pair alone:
+
+<img src=results/FP6/Harris_ORB.png width=1000>
+
+<img src=results/FP6/Harris_ORB_6_7.png width=1000>
+
+As it can be seen it is missing a lot of data, including either nans or infs.
+Nans are happening because no keypoint matches are found in the bounding box.
+
+On `SHITOMASI`-`FREAK` pair lesser problem such as above can be seen:
+
+<img src=results/FP6/SHI-FREAK.png width=1000>
+
+<img src=results/FP6/SHI-FREAK_6_7.png width=1000>
+
+I believe the reason is few matches are found inside the bounding box and most of 
+them are on the far corners of the bounding box and they filtered out by the shrinking
+bounding box.
+
+The solution that it comes to my mind is that, we can do a lot better if we would
+have ran the keypoint detection only on the bounding boxes instead of the whole image.
+I believe a lot of algorithms would have given a better results in this case but of course
+the algorithm would be slower.
