@@ -68,8 +68,8 @@ def run_command(detector_type="ORB",
                "-s", str(start_index),
                "-e", str(end_index)
                ]
-    if focus_on_proceding_vehicle:
-        command = command + ["-f"]
+    # if focus_on_proceding_vehicle:
+    #     command = command + ["-f"]
 
     if top_view:
         command = command + ["--top_view"]

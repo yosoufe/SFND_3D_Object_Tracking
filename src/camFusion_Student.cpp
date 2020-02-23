@@ -54,6 +54,8 @@ void clusterLidarWithROI(std::vector<BoundingBox> &boundingBoxes,
         filtered_lidar_points.push_back(pt);
     }
 
+    // std::vector<LidarPoint> filtered_lidar_points = lidarPoints;
+
     for (auto it1 = filtered_lidar_points.begin(); it1 != filtered_lidar_points.end(); ++it1)
     {
         // assemble vector for matrix-vector-multiplication

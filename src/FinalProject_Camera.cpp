@@ -41,7 +41,7 @@ int main(int argc, const char *argv[])
     const char *descriptorTypeC = "BRISK"; // BRISK BRIEF, ORB, FREAK, AKAZE, SIFT
     const char *selectorTypeC = "SEL_NN";  // SEL_NN, SEL_KNN
     float reflectiveThreshold = 0.2;
-    int bFocusOnVehicle = 0;               // zero = false, none-zero = True
+    int bFocusOnVehicle = 1;               // zero = false, none-zero = True
     int bLimitKpts = 0;                    // zero = false, none-zero = True
     int bVerbose = 0;                      // zero = false, none-zero = True
     int bDebug = 0;                        // zero = false, none-zero = True
@@ -66,7 +66,7 @@ int main(int argc, const char *argv[])
                                                               "\n\t\t\t\t\tdefault: BRISK"),
         OPT_STRING('\0', "selector_type", &selectorTypeC, "selector type, options: SEL_NN, SEL_KNN"
                                                           "\n\t\t\t\t\tdefault: SEL_NN"),
-        OPT_BOOLEAN('f', "focus_on_vehicle", &bFocusOnVehicle, "To focus on only keypoints that are on the preceding vehicle."),
+        // OPT_BOOLEAN('f', "focus_on_vehicle", &bFocusOnVehicle, "To focus on only keypoints that are on the preceding vehicle."),
         OPT_BOOLEAN('l', "limit_keypoints", &bLimitKpts, "To limit the number of keypoints to maximum 50 keypoints."),
         // OPT_BOOLEAN('r', "results", &bResults, "showing TTC measurements"),
         OPT_GROUP("TTC Calculation Arguments: "),
@@ -428,6 +428,16 @@ int main(int argc, const char *argv[])
 
                     if (bCameraView)
                     {
+                        std::string windowName0 = "Keypoint Matches";
+                        cv::namedWindow(windowName0, 5);
+                        cv::Mat matchImg;
+                        cv::drawMatches((dataBuffer.end() - 1)->cameraImg, (dataBuffer.end() - 1)->keypoints,
+                                        (dataBuffer.end() - 2)->cameraImg, (dataBuffer.end() - 2)->keypoints, 
+                                        currBB->kptMatches,
+                                        matchImg, cv::Scalar::all(-1), cv::Scalar::all(-1), vector<char>(), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+                        cv::imshow(windowName0, matchImg);
+
+
                         cv::Mat visImg = (dataBuffer.end() - 1)->cameraImg.clone();
                         showLidarImgOverlay(visImg, currBB->lidarPoints, P_rect_00, R_rect_00, RT, &visImg);
                         cv::rectangle(visImg, cv::Point(currBB->roi.x, currBB->roi.y), cv::Point(currBB->roi.x + currBB->roi.width, currBB->roi.y + currBB->roi.height), cv::Scalar(0, 255, 0), 2);
