@@ -38,8 +38,8 @@ In this final project, the missing parts in the schematic are being implemented 
 1. Clone this repo and submodule [argparse](https://github.com/cofyc/argparse) as follow.
 
    ```
-   git clone https://github.com/yosoufe/SFND_2D_Feature_Tracking.git
-   cd SFND_2D_Feature_Tracking
+   git clone https://github.com/yosoufe/SFND_3D_Object_Tracking.git
+   cd SFND_3D_Object_Tracking
    git submodule update --init --recursive
    ```
 
