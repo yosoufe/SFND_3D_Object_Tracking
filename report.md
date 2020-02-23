@@ -95,7 +95,48 @@ void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
 This is alone is not giving a good results because still there would be a
 lot of outliers like the following images:
 
-![alt text](results/FP2/NoFilter_TopView_01.png =250x)
+<img src=results/FP2/NoFilter_TopView_01.png width=500>
+
+<img src=results/FP2/NoFilter_CamView_01.png width=500>
+
+I am using 
+[StatisticalOutlierRemoval](http://pointclouds.org/documentation/tutorials/statistical_outlier.php)
+to remove the outliers. The resulting for the same frame would be the following images:
+
+<img src=results/FP2/Filtered_TopView_01.png width=500>
+
+<img src=results/FP2/Filtered_CamView_01.png width=500>
+
+Which the outliers are completely gone. This is integrated in `clusterLidarWithROI`
+function as the following:
+
+```c++
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZI>);
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZI>);
+
+    for (auto & p : lidarPoints)
+    {
+        pcl::PointXYZI pt;
+        pt.x = p.x; pt.y = p.y; pt.z = p.z; pt.intensity = p.r;
+        cloud->points.push_back(pt);
+    }
+
+    // Create the filtering object
+    pcl::StatisticalOutlierRemoval<pcl::PointXYZI> sor;
+    sor.setInputCloud (cloud);
+    sor.setMeanK (20);
+    sor.setStddevMulThresh (1.0);
+    sor.filter (*cloud_filtered);
+
+    std::vector<LidarPoint> filtered_lidar_points;
+    for (auto&p : cloud_filtered->points)
+    {
+        LidarPoint pt;
+        pt.x = p.x; pt.y = p.y; pt.z = p.z; pt.r = p.intensity;
+        filtered_lidar_points.push_back(pt);
+    }
+```
+
 
 <a name="FP3" />
 
