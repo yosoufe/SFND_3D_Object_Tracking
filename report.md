@@ -92,6 +92,11 @@ void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
 }
 ```
 
+This is alone is not giving a good results because still there would be a
+lot of outliers like the following images:
+
+![alt text](results/FP2/NoFilter_TopView_01.png =250x)
+
 <a name="FP3" />
 
 ## FP3 - Associate Keypoint Correspondences with Bounding Boxes
