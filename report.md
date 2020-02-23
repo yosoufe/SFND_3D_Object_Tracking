@@ -97,15 +97,15 @@ lot of outliers like the following images:
 
 <img src=results/FP2/NoFilter_TopView_01.png width=500>
 
-<img src=results/FP2/NoFilter_CamView_01.png width=500>
+<img src=results/FP2/NoFilter_CamView_01.png width=1000>
 
 I am using 
 [StatisticalOutlierRemoval](http://pointclouds.org/documentation/tutorials/statistical_outlier.php)
-to remove the outliers. The resulting for the same frame would be the following images:
+to remove the outliers. The result for the same frame would be the following images:
 
 <img src=results/FP2/Filtered_TopView_01.png width=500>
 
-<img src=results/FP2/Filtered_CamView_01.png width=500>
+<img src=results/FP2/Filtered_CamView_01.png width=1000>
 
 Which the outliers are completely gone. This is integrated in `clusterLidarWithROI`
 function as the following:
@@ -190,6 +190,13 @@ for (size_t index = 0; index < temp_result.size(); index++)
 The complete code can be found in `clusterKptMatchesWithROI` function in 
 `camFusion_Student.cpp` file.
 
+I am also using the same technique here as in clustering the point clouds. Basically I am 
+removing the keypoints that are belong to two or more bounding boxes and only keep 
+the ones that are unique to single bounding box. For this purpose I had to move the position
+of this function to one layer on top and do minor changes to the prototype 
+of the function `clusterKptMatchesWithROI`. For more details please take a look at the
+source code.
+
 <a name="FP4" />
 
 ## FP4 - Compute Camera-based TTC
@@ -250,6 +257,61 @@ TTC = -dT / (1 - medDistRatio);
 
 ## FP5 - Performance Evaluation 1
 
+I have calculated the TTC with different minimum reflectiveness from the LIDAR data and made the 
+following graph.
+
+<img src=results/FP5/task_5.png width=1000>
+
+The data for the above graph is saved in `results/lidar_ttcs_vs_ths.p` pickle file and 
+in the jupyter notebook `analyse.ipynb` there is a small code snipper on how to use it.
+
+I would continue the discussion on the following graph with `minimum reflectiveness = 0.2`.
+
+<img src=results/FP5/TTCLidar0_2.png width=1000>
+
+The first thing, that attracts attentions, is the measurements 
+for the frames 52 and above. The question is 
+why they are fluctuating so much. The answer is at those moments the preceding vehicle is 
+standing still and TTC is very large and basically it is infinite. Therefore the calculated
+number is jumping between a very big negative number and very big positive number.
+
+On earlier frames there are some jumps visible that they do not seems to be real. 
+For example at frames 37-38 if we check the top view of the lidar we would see the 
+following images
+
+<img src=results/FP5/noisy_37-38.png width=1000>
+
+<img src=results/FP5/noisy_37-38_2.png width=1000>
+
+As you can see there are very small noises, on the first image on right side
+which causes that the car looks closer than real on the first image,
+that makes the displacement between two frames less than real and causing 
+to increase the TTC. The solution could be that we increase the resolution.
+What I mean by increasing the resolution is that, instead of considering all
+of the points as single box, we divide them into maybe 5 to 10 boxes (sticks as 
+is described in the lectures) and calculate
+the TTC for each box (stick) and use the average as final value.
+
+The similar error can be seen on frames 29-30.
+
+<img src=results/FP5/noisy_29-30.png width=1000>
+
+<img src=results/FP5/noisy_29-30_2.png width=1000>
+
+Because the noises are very small, the 
+[StatisticalOutlierRemoval](http://pointclouds.org/documentation/tutorials/statistical_outlier.php)
+filter could not eliminate them.
+
 <a name="FP6" />
 
 ## FP6 - Performance Evaluation 2
+
+I wrote the `runner.py` script to run the executable with different arguments 
+on different CPU cores in parallel. So I ran it with all possible pairs of 
+keypoint detectors and descriptors. The following graph is showing the results.
+
+<img src=results/FP6/task_6.png width=1000>
+
+The same story as the lidar graph is happening for the frames 52 and above because of the same reason
+of approximately constant distance between the ego and the preceding vehicle.
+
