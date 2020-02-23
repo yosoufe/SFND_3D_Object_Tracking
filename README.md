@@ -60,7 +60,7 @@ In this final project, the missing parts in the schematic are being implemented 
    * use `./3D_object_tracking -h` for help. It would create the following output:
 
         ```
-        $ ./3D_object_tracking -h
+        $ ./3D_object_tracking --help
         Usage: ./3D_feature_tracking [args]
         For example: ./3D_feature_tracking --detector_type=BRISK --matcher_type=MAT_FLANN --descriptor_type=DES_BINARY --selector_type=SEL_KNN
 
@@ -80,12 +80,13 @@ In this final project, the missing parts in the schematic are being implemented 
                                                 default: BRISK
             --selector_type=<str>         selector type, options: SEL_NN, SEL_KNN
                                                 default: SEL_NN
-            -f, --focus_on_vehicle        To focus on only keypoints that are on the preceding vehicle.
             -l, --limit_keypoints         To limit the number of keypoints to maximum 50 keypoints.
 
         TTC Calculation Arguments: 
             -r, --reflectiveness=<flt>    minimum reflectiveness to be used for Lidar TTC calculation
                                                 default: 0.2
+            -s, --start_index=<int>       Start index between [0, 73], Default: 0
+            -e, --end_index=<int>         End index between [1, 74], Default: 17
             --top_view                    Lidar Top View
             --camera_view                 Camera View
             -v, --verbose                 logging the steps of the program that are being started or finished.
