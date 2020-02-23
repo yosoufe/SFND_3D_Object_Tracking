@@ -11,6 +11,10 @@
 #include <set>
 #include <stdio.h>
 
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <pcl/filters/statistical_outlier_removal.h>
+
 using namespace std;
 
 // Create groups of Lidar points whose projection into the camera falls into the same bounding box
@@ -25,7 +29,32 @@ void clusterLidarWithROI(std::vector<BoundingBox> &boundingBoxes,
     cv::Mat X(4, 1, cv::DataType<double>::type);
     cv::Mat Y(3, 1, cv::DataType<double>::type);
 
-    for (auto it1 = lidarPoints.begin(); it1 != lidarPoints.end(); ++it1)
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZI>);
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZI>);
+
+    for (auto & p : lidarPoints)
+    {
+        pcl::PointXYZI pt;
+        pt.x = p.x; pt.y = p.y; pt.z = p.z; pt.intensity = p.r;
+        cloud->points.push_back(pt);
+    }
+
+    // Create the filtering object
+    pcl::StatisticalOutlierRemoval<pcl::PointXYZI> sor;
+    sor.setInputCloud (cloud);
+    sor.setMeanK (20);
+    sor.setStddevMulThresh (1.0);
+    sor.filter (*cloud_filtered);
+
+    std::vector<LidarPoint> filtered_lidar_points;
+    for (auto&p : cloud_filtered->points)
+    {
+        LidarPoint pt;
+        pt.x = p.x; pt.y = p.y; pt.z = p.z; pt.r = p.intensity;
+        filtered_lidar_points.push_back(pt);
+    }
+
+    for (auto it1 = filtered_lidar_points.begin(); it1 != filtered_lidar_points.end(); ++it1)
     {
         // assemble vector for matrix-vector-multiplication
         X.at<double>(0, 0) = it1->x;
