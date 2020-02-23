@@ -49,6 +49,9 @@ int main(int argc, const char *argv[])
     int bTopView = 0;
     int bCameraView = 0;
 
+    int imgStartIndex = 0; // first file index to load (assumes Lidar and camera names have identical naming convention)
+    int imgEndIndex = 17;  // last file index to load
+
     struct argparse_option options[] = {
         OPT_HELP(),
         OPT_GROUP("Keypoint Detection and Matching Arguments: "),
@@ -69,6 +72,8 @@ int main(int argc, const char *argv[])
         OPT_GROUP("TTC Calculation Arguments: "),
         OPT_FLOAT('r', "reflectiveness", &reflectiveThreshold, "minimum reflectiveness to be used for Lidar TTC calculation"
                                                                "\n\t\t\t\t\tdefault: 0.2"),
+        OPT_INTEGER('s', "start_index", &imgStartIndex, "Start index between [0, 73], Default: 0"),
+        OPT_INTEGER('e', "end_index", &imgEndIndex, "End index between [1, 74], Default: 17"),
         OPT_BOOLEAN('\0', "top_view", &bTopView, "Lidar Top View"),
         OPT_BOOLEAN('\0', "camera_view", &bCameraView, "Camera View"),
         OPT_BOOLEAN('v', "verbose", &bVerbose, "logging the steps of the program that are being started or finished."),
@@ -93,8 +98,6 @@ int main(int argc, const char *argv[])
     string imgBasePath = dataPath + "images/";
     string imgPrefix = "KITTI/2011_09_26/image_02/data/000000"; // left camera, color
     string imgFileType = ".png";
-    int imgStartIndex = 0; // first file index to load (assumes Lidar and camera names have identical naming convention)
-    int imgEndIndex = 77;  // last file index to load
     int imgStepWidth = 1;
     int imgFillWidth = 4; // no. of digits which make up the file index (e.g. img-0001.png)
 
@@ -183,7 +186,17 @@ int main(int argc, const char *argv[])
         // push image into data frame buffer
         DataFrame frame;
         frame.cameraImg = img;
-        dataBuffer.push_back(frame);
+        if (dataBuffer.size() < dataBufferSize)
+        {
+            dataBuffer.push_back(frame);
+        } else
+        {
+            for ( auto it = dataBuffer.begin() ; it != dataBuffer.end()-1 ; it++ )
+            {
+                *it = *(it+1);
+            }
+            dataBuffer[dataBufferSize - 1] = frame;
+        }
 
         if (bVerbose)
             cout << "#1 : LOAD IMAGE INTO BUFFER done" << endl;
@@ -209,6 +222,21 @@ int main(int argc, const char *argv[])
         float minZ = -1.5, maxZ = -0.9, minX = 2.0, maxX = 20.0, maxY = 2.0, minR = 0.1; // focus on ego lane
         cropLidarPoints(lidarPoints, minX, maxX, maxY, minZ, maxZ, minR);
 
+        // focus only on BBs on ego lanes
+        if (bFocusOnVehicle)
+        {
+            std::vector<BoundingBox> newBBs;
+            for (auto & bb : (dataBuffer.end() - 1)->boundingBoxes)
+            {
+                double center_x = bb.roi.x + bb.roi.width/2.0;
+                if (center_x > 535 && center_x < 535 + 194)
+                {
+                    newBBs.push_back(bb);
+                }
+            }
+            (dataBuffer.end() - 1)->boundingBoxes = newBBs;
+        }
+
         (dataBuffer.end() - 1)->lidarPoints = lidarPoints;
 
         if (bVerbose)
@@ -217,8 +245,13 @@ int main(int argc, const char *argv[])
         /* CLUSTER LIDAR POINT CLOUD */
 
         // associate Lidar points with camera-based ROI
-        float shrinkFactor = 0.10; // shrinks each bounding box by the given percentage to avoid 3D object merging at the edges of an ROI
-        clusterLidarWithROI((dataBuffer.end() - 1)->boundingBoxes, (dataBuffer.end() - 1)->lidarPoints, shrinkFactor, P_rect_00, R_rect_00, RT);
+        float shrinkFactor = 0.20; // shrinks each bounding box by the given percentage to avoid 3D object merging at the edges of an ROI
+        clusterLidarWithROI((dataBuffer.end() - 1)->boundingBoxes,
+                            (dataBuffer.end() - 1)->lidarPoints,
+                            shrinkFactor,
+                            P_rect_00,
+                            R_rect_00,
+                            RT);
 
         // Visualize 3D objects
         if (bTopView)
@@ -312,13 +345,19 @@ int main(int argc, const char *argv[])
             /* TRACK 3D OBJECT BOUNDING BOXES */
 
             //// STUDENT ASSIGNMENT
-            //// TASK FP.1 -> match list of 3D objects (vector<BoundingBox>) between current and previous frame (implement ->matchBoundingBoxes)
+            //// TASK FP.1 -> match list of 3D objects (vector<BoundingBox>) between current and previous frame (implement ->matchBmatch list of 3D objects (vector<BoundingBox>) between current and previous frame (implement ->matchBoundingBoxes)
             map<int, int> bbBestMatches;
             matchBoundingBoxes(matches, bbBestMatches, *(dataBuffer.end() - 2), *(dataBuffer.end() - 1)); // associate bounding boxes between current and previous frame using keypoint matches
             //// EOF STUDENT ASSIGNMENT
 
             // store matches in current data frame
             (dataBuffer.end() - 1)->bbMatches = bbBestMatches;
+
+            clusterKptMatchesWithROI((dataBuffer.end() - 1)->boundingBoxes,
+                                     0.2,
+                                     (dataBuffer.end() - 2)->keypoints,
+                                     (dataBuffer.end() - 1)->keypoints,
+                                     (dataBuffer.end() - 1)->kptMatches);
 
             if (bVerbose)
                 cout << "#8 : TRACK 3D OBJECT BOUNDING BOXES done" << endl;
@@ -369,12 +408,15 @@ int main(int argc, const char *argv[])
                     //// TASK FP.3 -> assign enclosed keypoint matches to bounding box (implement -> clusterKptMatchesWithROI)
                     //// TASK FP.4 -> compute time-to-collision based on camera (implement -> computeTTCCamera)
                     double ttcCamera;
-                    clusterKptMatchesWithROI(*currBB,
-                                             (dataBuffer.end() - 2)->keypoints,
-                                             (dataBuffer.end() - 1)->keypoints,
-                                             (dataBuffer.end() - 1)->kptMatches);
                     if (bDebug)
-                        printf("%lu mathces associated to this bounding box\n", currBB->kptMatches.size());
+                        printf("%lu matches associated to this bounding box\n", currBB->kptMatches.size());
+                    
+                    if (currBB->kptMatches.size() == 0)
+                    {
+                        printf("\tTTC from Camera: nan \n");
+                        continue;
+                    }
+
                     computeTTCCamera((dataBuffer.end() - 2)->keypoints,
                                      (dataBuffer.end() - 1)->keypoints,
                                      currBB->kptMatches,

@@ -14,7 +14,12 @@
 using namespace std;
 
 // Create groups of Lidar points whose projection into the camera falls into the same bounding box
-void clusterLidarWithROI(std::vector<BoundingBox> &boundingBoxes, std::vector<LidarPoint> &lidarPoints, float shrinkFactor, cv::Mat &P_rect_xx, cv::Mat &R_rect_xx, cv::Mat &RT)
+void clusterLidarWithROI(std::vector<BoundingBox> &boundingBoxes,
+                         std::vector<LidarPoint> &lidarPoints,
+                         float shrinkFactor,
+                         cv::Mat &P_rect_xx,
+                         cv::Mat &R_rect_xx,
+                         cv::Mat &RT)
 {
     // loop over all Lidar points and associate them to a 2D bounding box
     cv::Mat X(4, 1, cv::DataType<double>::type);
@@ -134,7 +139,8 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
 }
 
 // associate a given bounding box with the keypoints it contains
-void clusterKptMatchesWithROI(BoundingBox &boundingBox,
+void clusterKptMatchesWithROI(std::vector<BoundingBox> &boundingBoxes,
+                              float shrinkFactor,
                               std::vector<cv::KeyPoint> &kptsPrev,
                               std::vector<cv::KeyPoint> &kptsCurr,
                               std::vector<cv::DMatch> &kptMatches)
@@ -142,42 +148,70 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBox,
     // current = train
     // previous = query
 
-    std::vector<cv::DMatch> temp_result;
-    std::vector<double> eucleadian_distances;
-    for (auto &match : kptMatches)
+    for (auto & match : kptMatches)
     {
         cv::KeyPoint &prevkp = kptsPrev[match.queryIdx];
         cv::KeyPoint &currkp = kptsCurr[match.trainIdx];
 
-        if (boundingBox.contains(prevkp) && boundingBox.contains(currkp))
+        vector<vector<BoundingBox>::iterator> enclosingBoxes;
+        for (vector<BoundingBox>::iterator it2 = boundingBoxes.begin(); it2 != boundingBoxes.end(); ++it2)
         {
-            temp_result.push_back(match);
-            eucleadian_distances.push_back(
+            auto &boundingBox = *it2;
+
+            cv::Rect smallerBox;
+            smallerBox.x = boundingBox.roi.x + shrinkFactor * boundingBox.roi.width / 2.0;
+            smallerBox.y = boundingBox.roi.y + shrinkFactor * boundingBox.roi.height / 2.0;
+            smallerBox.width =  boundingBox.roi.width * (1 - shrinkFactor);
+            smallerBox.height = boundingBox.roi.height * (1 - shrinkFactor);
+
+            if (smallerBox.contains(prevkp.pt) && smallerBox.contains(currkp.pt))
+            {
+                enclosingBoxes.push_back(it2);
+            }
+        }
+
+        if (enclosingBoxes.size() == 1)
+        {
+            enclosingBoxes[0]->kptMatches.push_back(match);
+        }
+    }
+
+    for (auto& bb : boundingBoxes)
+    {
+        std::vector<cv::DMatch> final_matches;
+        std::vector<double> eucleadian_dist;
+        for (auto& match : bb.kptMatches)
+        {
+            cv::KeyPoint &prevkp = kptsPrev[match.queryIdx];
+            cv::KeyPoint &currkp = kptsCurr[match.trainIdx];
+
+            eucleadian_dist.push_back(
                 std::sqrt(
                     ((prevkp.pt.x - currkp.pt.x) * (prevkp.pt.x - currkp.pt.x)) +
                     ((prevkp.pt.y - currkp.pt.y) * (prevkp.pt.y - currkp.pt.y))
                 )
             );
         }
-    }
 
-    // calculate the mean and std of distances
-    double mean = std::accumulate(eucleadian_distances.begin(), eucleadian_distances.end(), 0.0)/eucleadian_distances.size();
-    auto add_square = [mean](double current_accumulation, double  elem)
-    {
-        auto d = elem - mean;
-        return current_accumulation + d*d;
-    };
-    double sigmaN = std::accumulate(eucleadian_distances.begin(), eucleadian_distances.end(), 0.0, add_square);
-    double standard_deviation = std::sqrt( sigmaN / eucleadian_distances.size());
+        double mean = std::accumulate(eucleadian_dist.begin(), eucleadian_dist.end(), 0.0)/eucleadian_dist.size();
+        auto add_square = [mean](double current_accumulation, double  elem)
+        {
+            auto d = elem - mean;
+            return current_accumulation + d*d;
+        };
+        double sigmaN = std::accumulate(eucleadian_dist.begin(), eucleadian_dist.end(), 0.0, add_square);
+        double standard_deviation = std::sqrt( sigmaN / eucleadian_dist.size());
 
-    // just use the matches that their distance are within the standard deviation
-    for (size_t index = 0; index < temp_result.size(); index++)
-    {
-        if (std::fabs( eucleadian_distances[index] - mean) < standard_deviation/2 )
-            boundingBox.kptMatches.push_back(temp_result[index]);
+        // just use the matches that their distance are within the standard deviation
+        for (size_t index = 0; index < bb.kptMatches.size(); index++)
+        {
+            if (std::fabs( eucleadian_dist[index] - mean) < standard_deviation )
+                final_matches.push_back(bb.kptMatches[index]);
+        }
+        bb.kptMatches = final_matches;
     }
     // std:: cout << temp_result.size() - boundingBox.kptMatches.size() << " removed" << std::endl;
+
 }
 
 // Compute time-to-collision (TTC) based on keypoint correspondences in successive images
@@ -190,6 +224,7 @@ void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPo
     for (auto it1 = kptMatches.begin(); it1 != kptMatches.end() - 1; ++it1)
     { // outer kpt. loop
 
+        volatile cv::DMatch ma = (*it1);
         // get current keypoint and its matched partner in the prev. frame
         cv::KeyPoint kpOuterCurr = kptsCurr.at(it1->trainIdx);
         cv::KeyPoint kpOuterPrev = kptsPrev.at(it1->queryIdx);
